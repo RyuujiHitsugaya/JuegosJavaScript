@@ -21,6 +21,7 @@ var msg = 0;
 var puntos = 0;
 var puntaje = 0;
 var dificultad = 0;
+var asteroides = 0;
 var ast = [[aleatorio(450),aleatorio(400)],
 		   [aleatorio(450),aleatorio(400)],
 		   [aleatorio(450),aleatorio(400)],
@@ -52,15 +53,15 @@ function inicio(){
 	$('#main')[0].loop = true;
 	$('#mission')[0].loop = true;
 	$('#main')[0].play();
-	$("button").click(function(){	
-		iniciar();		
+	$("button").click(function(){
+		iniciar();
 	});
 }
 
 function aleatorio(tope){
 	return Math.floor((Math.random() * tope) + 1);
-} 
-function iniciar(){	
+}
+function iniciar(){
 		ast = [[aleatorio(450),aleatorio(400)],
 				[aleatorio(450),aleatorio(400)],
 				[aleatorio(450),aleatorio(400)],
@@ -93,10 +94,11 @@ function iniciar(){
 				[dx,dy],[dx,dy],[dx,dy],
 				[dx,dy],[dx,dy],[dx,dy]];
 		dificultad = 0;
+		asteroides=0;
 		run();
 }
 function capturaTeclado(event){
-	if((event.which==39 || event.which==68)&&(x<420)){				
+	if((event.which==39 || event.which==68)&&(x<420)){
 		x += 10;
 		for(i=0;i<15;i++)
 		if(!disparar[i])
@@ -108,16 +110,12 @@ function capturaTeclado(event){
 		if(!disparar[i])
 			disparos[i][0] -= 10;
 	}
-	if(event.which==32){		
-		if(vida<0)
-			iniciar();
-		else{
+	if(event.which==32){
 			disparar[cont]=true;
 			cont += 1;
 			cont = (15 + cont)%15;
 		}
 	}
-}
 function Disparo(){
 	this.img = $("#disparo")[0];
     this.dibujar = function(ctx,cooX,cooY){
@@ -132,12 +130,12 @@ function Disparo(){
 		if(distancia>20)
 		   return false;
 		else
-		   return true;	
-	}	
+		   return true;
+	}
 }
 function Nave(){
 	this.img = [$("#ship")[0],$("#explosion")[0]];
-	
+
 	this.dibujar = function(ctx,i){
 		var img = this.img[i];
 		if(i==0)
@@ -147,18 +145,18 @@ function Nave(){
 		ctx.save();
 		ctx.restore();
 	}
-	
+
 	this.colision = function(xx,yy){
 		var distancia=0;
 		distancia=Math.sqrt( Math.pow( (xx-x-40), 2)+Math.pow( (yy-y-30),2));
 		if(distancia>40)
 		   return false;
 		else
-		   return true;	
+		   return true;
 	}
 }
 function Asteroid(){
-	this.img = [$("#asteroid")[0],$("#explosion")[0]];			
+	this.img = [$("#asteroid")[0],$("#explosion")[0]];
 	this.dibujar = function(ctx, x1, y1,i){
 		var img = this.img[i];
 		ctx.save();
@@ -168,7 +166,7 @@ function Asteroid(){
 		ctx.restore();
 	}
 }
-function run(){ 
+function run(){
 	$('#main')[0].pause();
 	$('#mission')[0].play();
 	var lienzo = $("#lienzo")[0];
@@ -177,7 +175,7 @@ function run(){
 	buffer.width = lienzo.width;
 	buffer.height = lienzo.height;
 	contextoBuffer = buffer.getContext("2d");
-	contextoBuffer.fillStyle = "#ffffff"; 
+	contextoBuffer.fillStyle = "#ffffff";
 	if(vida <= 0){
 			vida = 100;
 			vidas -= 1;
@@ -185,8 +183,8 @@ function run(){
 			$("#dead")[0].currentTime = 0;
 			$('#dead')[0].play();
 		}
-	if(vidas >= 0){  		
-		duracion++;				
+	if(vidas >= 0){
+		duracion++;
 		var objnave = new Nave();
 		var dispar = [new Disparo(),new Disparo(),new Disparo(),
 						new Disparo(),new Disparo(),new Disparo(),
@@ -196,13 +194,19 @@ function run(){
 		var objasteroid = [new Asteroid(),new Asteroid(),new Asteroid(),
 						   new Asteroid(),new Asteroid(),new Asteroid(),
 						   new Asteroid(),new Asteroid(),new Asteroid(),
-						   new Asteroid()]; 
-		contextoBuffer.clearRect(0,0,500,700);	
+						   new Asteroid()];
+		if(dificultad>=100000)
+		for(i=0;i<=asteroides;i++){
+			asteroides+=1;
+			objasteroid += [new Asteroid()];
+			ast += [[aleatorio(440)+10,aleatorio(1)]];
+		}
+		contextoBuffer.clearRect(0,0,500,700);
 		puntaje = (parseInt(duracion/100))+puntos;
 		for(i=0;i<15;i++)
 		dispar[i].dibujar(contextoBuffer,disparos[i][0],disparos[i][1]);
 		objnave.dibujar(contextoBuffer,0);
-		rotacion -= 5;	
+		rotacion -= 5;
 		for(i=0;i<15;i++)
 		if(disparar[i]){
 					disparos[i][1] -= 10;
@@ -211,11 +215,11 @@ function run(){
 						disparos[i][1] = y+2;
 						disparos[i][0] = x+39;
 					}
-		}	
-		for(i=0;i<10;i++){			
+		}
+		for(i=0;i<10+asteroides;i++){
 			objasteroid[i].dibujar(contextoBuffer,ast[i][0],ast[i][1],0);
 			if(objnave.colision(ast[i][0],ast[i][1])){
-				vida -=1;
+				vida -=3;
 				objnave.dibujar(contextoBuffer,1);
 				$('#explode')[0].pause();
 				$("#explode")[0].currentTime = 0;
@@ -234,17 +238,18 @@ function run(){
 				disparos[j][1] = y+2;
 				disparos[j][0] = x+39;
 			}
-			ast[i][1] += 5 + (dificultad/1000);	
-			dificultad += 1;
+			ast[i][1] += 5 + (dificultad/1000);
+			if(dificultad<100000)
+						dificultad += 1;
 			if(ast[i][1]>700)
-				ast[i] = [aleatorio(440)+10,aleatorio(1)];				
+				ast[i] = [aleatorio(440)+10,aleatorio(1)];
 		}
-		contextoBuffer.font = "bold 15px 'Lucida Console'";		
+		contextoBuffer.font = "bold 15px 'Lucida Console'";
 		for(i=0;i<vida;i++)
 		contextoBuffer.drawImage($("#life")[0], 70+i*2, 20);
 		contextoBuffer.drawImage($("#lifebar")[0], 46, 18);
 		contextoBuffer.drawImage(heroes[vidas], 10, 10);
-		contextoBuffer.fillText(puntaje, 70, 45);	
+		contextoBuffer.fillText(puntaje, 70, 45);
 		contextoBuffer.fillText("x"+vidas, 60, 65);
 		contexto.clearRect(0,0,500,700);
 		contexto.drawImage(buffer, 0, 0);
@@ -254,16 +259,15 @@ function run(){
 		vida=-1;
 		$('#mission')[0].pause();
 		$("#main")[0].currentTime = 0;
-		$('#main')[0].play();		
+		$('#main')[0].play();
 		var over = $("#gameover")[0];
-		contextoBuffer.clearRect(0,0,500,700);		
+		contextoBuffer.clearRect(0,0,500,700);
 	    contextoBuffer.drawImage(over, 0, 200);
 		contextoBuffer.font="50px System";
 		contextoBuffer.fillText(puntaje, 200, 378);
 		contexto.clearRect(0,0,500,700);
 		contexto.drawImage(buffer, 0, 0);
+		$("#puntaje").html(puntaje);
 		$("button").css("display","inline");
 	}
 }
-
-
